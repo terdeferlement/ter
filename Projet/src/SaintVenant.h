@@ -1,0 +1,76 @@
+#ifndef _SAINT_VENANT_H
+#define _SAINT_VENANT_H
+
+#include <vector>
+#include <string>
+#include <fstream>
+
+// ========================================
+// Classe principale : résout Saint-Venant 1D
+// ========================================
+class SaintVenant1D
+{
+private:
+    // Paramètres du domaine
+    int _N;              // Nombre de cellules
+    double _L;           // Longueur du domaine [0, L]
+    double _dx;          // Pas d'espace : dx = L/N
+    
+    // Paramètres temporels
+    double _t;           // Temps actuel
+    double _dt;          // Pas de temps
+    double _CFL;         // Nombre CFL (< 0.5 pour stabilité)
+    
+    // Variables de la solution
+    // W = (h, hu) où h = hauteur, hu = débit
+    std::vector<double> _h;   // Hauteur d'eau dans chaque cellule
+    std::vector<double> _hu;  // Débit (h*u) dans chaque cellule
+    
+    // Constante physique
+    static constexpr double _g = 9.81;  // Gravité (m/s²)
+    
+    // Fichier pour sauvegarder
+    std::ofstream _fichier;
+
+public:
+    // Constructeur
+    SaintVenant1D();
+    
+    // Destructeur
+    ~SaintVenant1D();
+    
+    // Initialiser la simulation
+    void Initialiser(int N, double L, double CFL, std::string nom_fichier);
+    
+    // Définir la condition initiale
+    // Dans la section public
+    void ConditionInitialeHoule(double amplitude);
+    
+    // Calculer le flux physique F(h, hu) = (hu, hu²/h + g*h²/2)
+    void CalculerFluxPhysique(double h, double hu, double& F_h, double& F_hu);
+    
+    // Calculer le flux numérique de Lax-Friedrichs entre deux cellules
+    void FluxRusanov(double hL, double huL, double hR, double huR,
+                           double& flux_h, double& flux_hu);
+    
+    // Calculer la vitesse u = hu/h
+    double CalculerVitesse(double h, double hu);
+    
+    // Calculer la vitesse maximale (pour le pas de temps CFL)
+    double VitesseMaximale();
+    
+    // Calculer le pas de temps avec la condition CFL
+    void CalculerPasDeTemps();
+    
+    // Avancer d'un pas de temps (schéma de Godunov)
+    void Avancer();
+    
+    // Sauvegarder la solution dans le fichier
+    void Sauvegarder();
+    
+    // Accesseurs
+    double ObtenirTemps() const { return _t; }
+    double ObtenirDt() const { return _dt; }
+};
+
+#endif // _SAINT_VENANT_H
