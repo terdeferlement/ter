@@ -52,6 +52,7 @@ ax1.set_xlabel('Position x (m)', fontsize=12)
 ax1.set_ylabel('Hauteur h (m)', fontsize=12)
 ax1.set_title(f'Hauteur d\'eau à t = {t_final:.3f} s', fontsize=14)
 ax1.grid(True, alpha=0.3)
+ax1.set_ylim(bottom=0)
 
 # Graphique de la vitesse
 ax2.plot(x_final, u_final, 'r-', linewidth=2)
@@ -61,9 +62,9 @@ ax2.set_title(f'Vitesse à t = {t_final:.3f} s', fontsize=14)
 ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('resultat_final.png', dpi=150)
+plt.savefig('images/resultat_final.png', dpi=150)
 print("Sauvegardé : resultat_final.png")
-plt.show()
+# plt.show()
 
 # ================================================
 # GRAPHIQUE 2 : Évolution temporelle
@@ -94,11 +95,12 @@ plt.xlabel('Position x (m)', fontsize=12)
 plt.ylabel('Hauteur h (m)', fontsize=12)
 plt.title('Évolution de la hauteur d\'eau', fontsize=14)
 plt.grid(True, alpha=0.3)
+plt.ylim(bottom=0)
 plt.legend(fontsize=10)
 plt.tight_layout()
-plt.savefig('evolution.png', dpi=150)
+plt.savefig('images/evolution.png', dpi=150)
 print("Sauvegardé : evolution.png")
-plt.show()
+# plt.show()
 
 # ================================================
 # GRAPHIQUE 3 : Diagramme espace-temps (3D)
@@ -123,9 +125,9 @@ ax.set_title('Diagramme espace-temps', fontsize=14)
 cbar = fig.colorbar(scatter, ax=ax, shrink=0.5)
 cbar.set_label('Hauteur (m)', fontsize=10)
 
-plt.savefig('espace_temps.png', dpi=150)
+plt.savefig('images/espace_temps.png', dpi=150)
 print("Sauvegardé : espace_temps.png")
-plt.show()
+# plt.show()
 
 print()
 print("=" * 50)

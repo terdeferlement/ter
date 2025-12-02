@@ -1,7 +1,6 @@
 #include "SaintVenant.h"
 #include <cmath>
 #include <iostream>
-#include <algorithm>
 
 using namespace std;
 
@@ -49,21 +48,22 @@ void SaintVenant1D::Initialiser(int N, double L, double CFL, string nom_fichier)
     cout << "  - Pas d'espace dx : " << _dx << " m" << endl;
 }
 
-// ========================================
-// Condition initiale : barrage de rupture
-// Eau haute à gauche, eau basse à droite
-// ========================================
-// ========================================
-// Condition initiale : Vague (Gaussienne)
-// ========================================
+void SaintVenant1D::ConditionInitialeDamBreak() {
+    for (int i = 0; i < _N; i++) {
+        if (i < _N / 2) _h[i] = 10.0; // Gauche haute
+        else            _h[i] = 5.0; // Droite basse
+        _hu[i] = 0.0;
+    }
+}
+
 // ========================================
 // Condition initiale : Houle (Soliton)
 // Une vague unique qui se déplace vers la droite
 // ========================================
 void SaintVenant1D::ConditionInitialeHoule(double amplitude)
 {
-    double h_fond = 1.0;            // Profondeur au repos
-    double x_centre = 0.2 * _L;     // On la fait partir de la gauche (20% du domaine)
+    double h_fond = 1;            // Profondeur au repos
+    double x_centre = 0.5 * _L;     // On la fait partir de la gauche (30% du domaine)
     
     // Calcul de la largeur de la vague (relation physique du soliton)
     // k influence la "finesse" de la vague
@@ -88,6 +88,7 @@ void SaintVenant1D::ConditionInitialeHoule(double amplitude)
         // On initialise u pour que la vague aille vers la DROITE.
         // Relation approchée : u = c * (h - h_fond) / h
         
+        
         if (_h[i] > 1e-6) {
              _hu[i] = c * ((_h[i] - h_fond) / _h[i]) * _h[i]; // donc c * perturbation
         } else {
@@ -109,7 +110,7 @@ void SaintVenant1D::CalculerFluxPhysique(double h, double hu, double& F_h, doubl
     F_h = hu;
     
     // Deuxième composante : F_hu = hu²/h + g*h²/2
-    if (h > 1e-10)  // Éviter division par zéro
+    if (h > critere_hauteur_deau)  // Éviter division par zéro
     {
         double u = hu / h;
         F_hu = hu * u + 0.5 * _g * h * h;
@@ -125,7 +126,7 @@ void SaintVenant1D::CalculerFluxPhysique(double h, double hu, double& F_h, doubl
 // ========================================
 double SaintVenant1D::CalculerVitesse(double h, double hu)
 {
-    if (h > 1e-10)
+    if (h > critere_hauteur_deau)
         return hu / h;
     else
         return 0.0;
@@ -150,16 +151,16 @@ void SaintVenant1D::FluxRusanov(double hL, double huL, double hR, double huR,
     double uR = CalculerVitesse(hR, huR);
     
     double cL = 0.0, cR = 0.0;
-    if (hL > 1e-10) cL = sqrt(_g * hL);  // Célérité gauche
-    if (hR > 1e-10) cR = sqrt(_g * hR);  // Célérité droite
+    if (hL > critere_hauteur_deau) cL = sqrt(_g * hL);  // Célérité gauche
+    if (hR > critere_hauteur_deau) cR = sqrt(_g * hR);  // Célérité droite
     
-    double alphaL = fabs(uL) + cL;  // Vitesse max à gauche
-    double alphaR = fabs(uR) + cR;  // Vitesse max à droite
-    double alpha = max(alphaL, alphaR);  // On prend le maximum
+    double lambdaL = abs(uL) + cL;  // Vitesse max à gauche
+    double lambdaR = abs(uR) + cR;  // Vitesse max à droite
+    double lambda = max(lambdaL, lambdaR);  // On prend le maximum
     
-    // 3. Flux de Lax-Friedrichs = moyenne + dissipation
-    flux_h = 0.5 * (FL_h + FR_h) - 0.5 * alpha * (hR - hL);
-    flux_hu = 0.5 * (FL_hu + FR_hu) - 0.5 * alpha * (huR - huL);
+    // 3. Flux de Rusanov = moyenne + dissipation
+    flux_h = 0.5 * (FL_h + FR_h) - 0.5 * lambda * (hR - hL);
+    flux_hu = 0.5 * (FL_hu + FR_hu) - 0.5 * lambda * (huR - huL);
 }
 
 // ========================================
@@ -192,7 +193,7 @@ void SaintVenant1D::CalculerPasDeTemps()
 {
     double v_max = VitesseMaximale();
     
-    if (v_max > 1e-10)
+    if (v_max > critere_vitesse)
         _dt = _CFL * _dx / v_max;
     else
         _dt = 0.01;  // Valeur par défaut si v_max = 0
@@ -228,6 +229,7 @@ void SaintVenant1D::Avancer()
         // W_nouveau = W_ancien - (dt/dx) * (Flux_droite - Flux_gauche)
         double coeff = _dt / _dx;
         h_nouveau[i] = _h[i] - coeff * (flux_droite_h - flux_gauche_h);
+        //hu_nouveau[0] = hu_nouveau[1]; // On copie la vitesse
         hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu - flux_gauche_hu);
     }
     
@@ -236,6 +238,8 @@ void SaintVenant1D::Avancer()
     hu_nouveau[0] = hu_nouveau[1];
     h_nouveau[_N-1] = h_nouveau[_N-2];
     hu_nouveau[_N-1] = hu_nouveau[_N-2];
+
+
     
     // 5. Copier la nouvelle solution
     _h = h_nouveau;
@@ -259,4 +263,21 @@ void SaintVenant1D::Sauvegarder()
         _fichier << _t << " " << x << " " << _h[i] << " " << u << endl;
     }
     _fichier << endl;  // Ligne vide pour séparer les temps
+}
+
+
+
+
+double SaintVenant1D::CalculerMasseTotale()
+{
+    double volume_total = 0.0;
+    
+    // On somme la hauteur d'eau de toutes les cellules
+    for (int i = 0; i < _N; i++)
+    {
+        volume_total += _h[i];
+    }
+    
+    // Volume = Somme des hauteurs * largeur d'une cellule
+    return volume_total * _dx;
 }

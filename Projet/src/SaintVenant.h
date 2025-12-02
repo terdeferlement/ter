@@ -15,11 +15,15 @@ private:
     int _N;              // Nombre de cellules
     double _L;           // Longueur du domaine [0, L]
     double _dx;          // Pas d'espace : dx = L/N
+    double critere_hauteur_deau=1e-10;
+    double critere_vitesse=1e-10;
     
     // Paramètres temporels
     double _t;           // Temps actuel
     double _dt;          // Pas de temps
     double _CFL;         // Nombre CFL (< 0.5 pour stabilité)
+
+
     
     // Variables de la solution
     // W = (h, hu) où h = hauteur, hu = débit
@@ -45,6 +49,8 @@ public:
     // Définir la condition initiale
     // Dans la section public
     void ConditionInitialeHoule(double amplitude);
+
+    void ConditionInitialeDamBreak();
     
     // Calculer le flux physique F(h, hu) = (hu, hu²/h + g*h²/2)
     void CalculerFluxPhysique(double h, double hu, double& F_h, double& F_hu);
@@ -68,6 +74,8 @@ public:
     // Sauvegarder la solution dans le fichier
     void Sauvegarder();
     
+    // Pour valider la quantité de masse
+    double CalculerMasseTotale();
     // Accesseurs
     double ObtenirTemps() const { return _t; }
     double ObtenirDt() const { return _dt; }
