@@ -38,6 +38,7 @@ void SaintVenant1D::Initialiser(int N, double L, double CFL, string nom_fichier)
     // Allouer les vecteurs de taille N
     _h.resize(N);
     _hu.resize(N);
+    _zb.resize(N); 
     
     // Ouvrir le fichier
     _fichier.open(nom_fichier);
@@ -57,48 +58,64 @@ void SaintVenant1D::ConditionInitialeDamBreak() {
 }
 
 // ========================================
-// Condition initiale : Houle (Soliton)
+// Condition initiale : Houle 
 // Une vague unique qui se déplace vers la droite
 // ========================================
+
 void SaintVenant1D::ConditionInitialeHoule(double amplitude)
 {
-    double h_fond = 1;            // Profondeur au repos
-    double x_centre = 0.5 * _L;     // On la fait partir de la gauche (30% du domaine)
+    double niveau_eau_moyen = 1.0;  // Niveau de la mer (Z = 1m)
+    _h_fond = niveau_eau_moyen;     // Pour le calcul théorique
     
-    // Calcul de la largeur de la vague (relation physique du soliton)
-    // k influence la "finesse" de la vague
-    double k = sqrt((3.0 * amplitude) / (4.0 * pow(h_fond, 3)));
-    
-    // Célérité de l'onde (vitesse de phase approx)
-    double c = sqrt(_g * (h_fond + amplitude));
+    // Paramètres de la vague (Soliton)
+    double x_vague = 0.25*_L; // Départ de la vague (zone plate)
+    double k = sqrt((3.0 * amplitude) / (4.0 * pow(niveau_eau_moyen, 3)));
+    double c = sqrt(_g * (niveau_eau_moyen + amplitude));
+
+    // Paramètres de la Plage
+    double x_debut_pente = _L / 2.0; // Commence au milieu (25m)
+    double z_fin = 0;              // Monte jusqu'à 2m de haut à la fin
+    double pente = (z_fin - 0.0) / (_L - x_debut_pente); 
 
     for (int i = 0; i < _N; i++)
     {
         double x = (i + 0.5) * _dx;
         
-        // 1. Forme de la surface : Profil en sech²
-        double arg = k * (x - x_centre);
+        // 1. Calcul du FOND (Bathymétrie)
+        if (x < x_debut_pente) {
+            _zb[i] = 0.0; // Fond plat
+        } else {
+            _zb[i] = pente * (x - x_debut_pente); // Montée linéaire
+        }
+        
+        // 2. Calcul de la SURFACE (Vague + Niveau moyen)
+        double arg = k * (x - x_vague);
         double sech = 1.0 / cosh(arg);
         double perturbation = amplitude * (sech * sech);
         
-        _h[i] = h_fond + perturbation;
+        double surface_eau = niveau_eau_moyen + perturbation;
         
-        // 2. Vitesse initiale : CRUCIAL
-        // Si on met 0, la vague se coupe en deux.
-        // On initialise u pour que la vague aille vers la DROITE.
-        // Relation approchée : u = c * (h - h_fond) / h
+        // 3. Calcul de la HAUTEUR D'EAU (h = Surface - Fond)
+        _h[i] = surface_eau - _zb[i];
         
-        
+        // Gestion de la zone sèche (si la plage dépasse l'eau)
+        if (_h[i] < 0) _h[i] = 0.0;
+
+        // 4. Vitesse
+        // On ne met de la vitesse que là où il y a de l'eau
         if (_h[i] > 1e-6) {
-             _hu[i] = c * ((_h[i] - h_fond) / _h[i]) * _h[i]; // donc c * perturbation
+             // Approximation : la vitesse suit la perturbation de surface
+             // Attention : sur la pente, cette init est approximative mais ok
+             double h_theorique_plat = niveau_eau_moyen + perturbation;
+             double u_theorique = c * ((h_theorique_plat - niveau_eau_moyen) / h_theorique_plat);
+             
+             _hu[i] = _h[i] * u_theorique;
         } else {
              _hu[i] = 0.0;
         }
     }
-    
-    cout << "Condition initiale : Houle (Soliton) vers la droite, Amp=" << amplitude << endl;
+    cout << "Plage initialisée : Pente de " << x_debut_pente << "m a " << _L << "m." << endl;
 }
-
 
 // ========================================
 // Calculer le flux physique F(W)
@@ -229,15 +246,32 @@ void SaintVenant1D::Avancer()
         // W_nouveau = W_ancien - (dt/dx) * (Flux_droite - Flux_gauche)
         double coeff = _dt / _dx;
         h_nouveau[i] = _h[i] - coeff * (flux_droite_h - flux_gauche_h);
-        //hu_nouveau[0] = hu_nouveau[1]; // On copie la vitesse
         hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu - flux_gauche_hu);
+
+        
+        // Pente locale dz/dx (différence centrée)
+        double dz_dx = (_zb[i+1] - _zb[i-1]) / (2.0 * _dx);
+
+        // Terme source : S = -g * h * (dz/dx)
+    // On ne l'applique que s'il y a de l'eau
+    if (_h[i] > critere_hauteur_deau)
+    {
+        double Source = - _g * _h[i] * dz_dx;
+        hu_nouveau[i] += _dt * Source; // On ajoute dt * Source
+    }
     }
     
-    // 4. Conditions aux limites : réflexion
+    //Conditions limite fenetre ouverte
     h_nouveau[0] = h_nouveau[1];
     hu_nouveau[0] = hu_nouveau[1];
     h_nouveau[_N-1] = h_nouveau[_N-2];
     hu_nouveau[_N-1] = hu_nouveau[_N-2];
+
+    // // 4. Conditions aux limites : réflexion
+    // h_nouveau[0] = h_nouveau[1];
+    // hu_nouveau[0] = -hu_nouveau[1];
+    // h_nouveau[_N-1] = h_nouveau[_N-2];
+    // hu_nouveau[_N-1] = -hu_nouveau[_N-2];
 
 
     
@@ -257,15 +291,20 @@ void SaintVenant1D::Sauvegarder()
 {
     for (int i = 0; i < _N; i++)
     {
-        double x = (i + 0.5) * _dx;  // Centre de la cellule
+        double x = (i + 0.5) * _dx;
         double u = CalculerVitesse(_h[i], _hu[i]);
+        double zb = _zb[i];
+        double H = _h[i] + zb; // Surface libre (Niveau de l'eau)
         
-        _fichier << _t << " " << x << " " << _h[i] << " " << u << endl;
+        // On écrit : t x h u zb H
+        _fichier << _t << " " << x << " " << _h[i] << " " << u << " " << zb << " " << H << endl;
     }
-    _fichier << endl;  // Ligne vide pour séparer les temps
+    _fichier << endl;
 }
 
 
+
+// Validation
 
 
 double SaintVenant1D::CalculerMasseTotale()
@@ -280,4 +319,56 @@ double SaintVenant1D::CalculerMasseTotale()
     
     // Volume = Somme des hauteurs * largeur d'une cellule
     return volume_total * _dx;
+}
+
+
+double SaintVenant1D::ObtenirHauteurMax()
+{
+    double h_max = -1.0;
+    for (int i = 0; i < _N; i++)
+    {
+        if (_h[i] > h_max) h_max = _h[i];
+    }
+    return h_max;
+}
+
+double SaintVenant1D::ObtenirPositionCrete()
+{
+    double h_max = -1.0;
+    int i_max = 0;
+    
+    // Trouver l'indice de la cellule où l'eau est la plus haute
+    for (int i = 0; i < _N; i++)
+    {
+        if (_h[i] > h_max)
+        {
+            h_max = _h[i];
+            i_max = i;
+        }
+    }
+    
+    // Retourner la position physique (x) de cette cellule
+    return (i_max + 0.5) * _dx;
+}
+
+double SaintVenant1D::CalculerEnergieTotale()
+{
+    double energie_totale = 0.0;
+    
+    for (int i = 0; i < _N; i++)
+    {
+        // 1. Energie Potentielle : 1/2 * g * h^2
+        double Ep = 0.5 * _g * _h[i] * _h[i];
+        
+        // 2. Energie Cinétique : 1/2 * h * u^2  (ou 1/2 * (hu)^2 / h)
+        double Ec = 0.0;
+        if (_h[i] > 1e-10) {
+            double u = _hu[i] / _h[i];
+            Ec = 0.5 * _h[i] * u * u;
+        }
+        
+        energie_totale += (Ep + Ec);
+    }
+    
+    return energie_totale * _dx;
 }

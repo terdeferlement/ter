@@ -23,8 +23,13 @@ private:
     double _dt;          // Pas de temps
     double _CFL;         // Nombre CFL (< 0.5 pour stabilité)
 
+    //Paramètres condition initiale
+    double _h_fond;
 
-    
+    //Bathymetrie
+    std::vector<double> _zb;  // Bathymétrie (altitude du fond)
+
+
     // Variables de la solution
     // W = (h, hu) où h = hauteur, hu = débit
     std::vector<double> _h;   // Hauteur d'eau dans chaque cellule
@@ -76,9 +81,16 @@ public:
     
     // Pour valider la quantité de masse
     double CalculerMasseTotale();
+    // Pour valider la conservation de la vitesse
+    double ObtenirPositionCrete(); // Retourne le X où h est maximal
+    double ObtenirHauteurMax();    // Retourne le h maximal actuel
+    // Pour valider l'energie
+    double CalculerEnergieTotale();
     // Accesseurs
     double ObtenirTemps() const { return _t; }
     double ObtenirDt() const { return _dt; }
+    double ObtenirHFond() const { return _h_fond; }
+    const std::vector<double>& ObtenirZb() const { return _zb; }
 };
 
 #endif // _SAINT_VENANT_H
