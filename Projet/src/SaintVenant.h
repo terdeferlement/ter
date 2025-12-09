@@ -28,6 +28,8 @@ private:
 
     //Bathymetrie
     std::vector<double> _zb;  // Bathymétrie (altitude du fond)
+    std::vector<double> _d_zb;  // Bathymétrie (pente du fond)
+
 
 
     // Variables de la solution
@@ -100,6 +102,8 @@ public:
     double ObtenirDt() const { return _dt; }
     double ObtenirHFond() const { return _h_fond; }
     const std::vector<double>& ObtenirZb() const { return _zb; }
+    const std::vector<double>& ObtenirdZb() const { return _d_zb; }
+
 
     // Accesseurs pour debug
 double ObtenirH(int i) const { 

@@ -39,6 +39,7 @@ void SaintVenant1D::Initialiser(int N, double L, double CFL, string nom_fichier)
     _h.resize(N);
     _hu.resize(N);
     _zb.resize(N); 
+    _d_zb.resize(N);  
     
     // Ouvrir le fichier
     _fichier.open(nom_fichier);
@@ -68,13 +69,13 @@ void SaintVenant1D::ConditionInitialeHoule(double amplitude)
     _h_fond = niveau_eau_moyen;     // Pour le calcul théorique
     
     // Paramètres de la vague (Soliton)
-    double x_vague = 0.5*_L; // Départ de la vague (zone plate)
+    double x_vague = 0.25*_L; // Départ de la vague (zone plate)
     double k = sqrt((3.0 * amplitude) / (4.0 * pow(niveau_eau_moyen, 3)));
     double c = sqrt(_g * (niveau_eau_moyen + amplitude));
 
     // Paramètres de la Plage
     double x_debut_pente = _L / 2.0; // Commence au milieu (25m)
-    double z_fin = 0;              // Monte jusqu'à 2m de haut à la fin
+    double z_fin = 0.5;              // Monte jusqu'à 2m de haut à la fin
     double pente = (z_fin - 0.0) / (_L - x_debut_pente); 
 
     for (int i = 0; i < _N; i++)
@@ -145,7 +146,7 @@ void SaintVenant1D::ConditionInitialeGaussienne(double amplitude)
         // Gestion zone sèche
         if (_h[i] < 0) _h[i] = 0.0;
         
-        // 4. Vitesse initiale nulle
+        // 4. Vitesse initiale 
         _hu[i] = 0.0;
     }
     cout << "Fluide : Gaussienne (Amp=" << amplitude 
@@ -173,8 +174,16 @@ void SaintVenant1D::DefinirFondPente(double x_debut, double z_fin)
     {
         double x = (i + 0.5) * _dx;
         
-        if (x < x_debut) _zb[i] = 0.0;
-        else             _zb[i] = pente * (x - x_debut);
+        if (x < x_debut) 
+        {
+            _zb[i] = 0.0;
+            _d_zb[i] =0.0;
+        }
+        else 
+        {
+            _zb[i] = pente * (x - x_debut);
+            _d_zb[i] = pente;
+        }
     }
     cout << "Bathymetrie : Pente démarrant a x=" << x_debut << "m." << endl;
 }
@@ -231,7 +240,6 @@ double SaintVenant1D::CalculerVitesse(double h, double hu)
 }
 
 // ========================================
-// Flux numérique de Lax-Friedrichs
 // C'est la moyenne des flux + un terme de dissipation
 // ========================================
 void SaintVenant1D::FluxRusanov(double hL, double huL, double hR, double huR,
@@ -299,18 +307,19 @@ void SaintVenant1D::CalculerPasDeTemps()
 
 // ========================================
 // Avancer d'un pas de temps
-// Schéma de Godunov avec flux de Lax-Friedrichs
-// ========================================
+// Schéma de Godunov avec flux de rosunov
+// =======================================
+
 void SaintVenant1D::Avancer()
 {
-    // 1. Calculer le nouveau pas de temps
+    //  Calculer le nouveau pas de temps
     CalculerPasDeTemps();
     
-    // 2. Créer des vecteurs temporaires pour la nouvelle solution
+    //  Créer des vecteurs temporaires pour la nouvelle solution
     vector<double> h_nouveau(_N);
     vector<double> hu_nouveau(_N);
     
-    // 3. Pour chaque cellule (sauf les bords)
+    //  Pour chaque cellule (sauf les bords)
     for (int i = 1; i < _N - 1; i++)
     {
         // Flux à l'interface droite (entre i et i+1)
@@ -329,25 +338,15 @@ void SaintVenant1D::Avancer()
         h_nouveau[i] = _h[i] - coeff * (flux_droite_h - flux_gauche_h);
         hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu - flux_gauche_hu);
 
-        
 
-  // ===== TERME SOURCE WELL-BALANCED =====
-        // Pour préserver l'équilibre hydrostatique (lac au repos)
-        // On doit calculer le gradient de la SURFACE LIBRE et non du fond
+        // Pente locale dz/dx (différence centrée)
+        // double dz_dx = (_zb[i+1] - _zb[i-1]) / (2.0 * _dx);
+
         if (_h[i] > critere_hauteur_deau)
         {
-            // Surface libre aux interfaces
-            double surface_gauche = _h[i-1] + _zb[i-1];
-            double surface_droite = _h[i+1] + _zb[i+1];
-            
-            // Gradient de surface (pente de l'eau)
-            double grad_surface = (surface_droite - surface_gauche) / (2.0 * _dx);
-            
-            // Terme source : force seulement si la surface n'est PAS horizontale
-            double Source = - _g * _h[i] * grad_surface;
-            hu_nouveau[i] += _dt * Source;
+            double Source = - _g * _h[i] * _d_zb[i];
+            hu_nouveau[i] += _dt * Source; // On ajoute dt * Source
         }
-
     }
     
     //Conditions limite fenetre ouverte
@@ -356,19 +355,18 @@ void SaintVenant1D::Avancer()
     h_nouveau[_N-1] = h_nouveau[_N-2];
     hu_nouveau[_N-1] = hu_nouveau[_N-2];
 
-    // // 4. Conditions aux limites : réflexion
+    // //  Conditions aux limites : réflexion
     // h_nouveau[0] = h_nouveau[1];
     // hu_nouveau[0] = -hu_nouveau[1];
     // h_nouveau[_N-1] = h_nouveau[_N-2];
     // hu_nouveau[_N-1] = -hu_nouveau[_N-2];
 
-
     
-    // 5. Copier la nouvelle solution
+    //  Copier la nouvelle solution
     _h = h_nouveau;
     _hu = hu_nouveau;
     
-    // 6. Avancer le temps
+    //  Avancer le temps
     _t += _dt;
 }
 

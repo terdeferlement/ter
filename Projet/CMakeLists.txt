@@ -6,8 +6,8 @@ set( CXX_STANDARD_REQUIRED On )
 set( CXX_STANDARD 11 ) # C++11 est suffisant, ou 17/20 selon besoin
 
 # Votre chemin vers Eigen
-set( LIBRARY_PATH_EIGEN "/Users/ethanlatouche/Downloads/DM1/test_Eigen/eigen-3.4.0/" )
-# set( LIBRARY_PATH_EIGEN "/net/netud/m/elatouche001/TPCPP/TP3/test_Eigen/eigen/" )
+# set( LIBRARY_PATH_EIGEN "/Users/ethanlatouche/Downloads/DM1/test_Eigen/eigen-3.4.0/" )
+#set( LIBRARY_PATH_EIGEN "/net/netud/m/elatouche001/TPCPP/TP3/test_Eigen/eigen/" )
 
 
 # Inclusion des fichiers d'en-tête (headers) d'Eigen pour que le compilateur les trouve

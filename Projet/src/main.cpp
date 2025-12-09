@@ -15,10 +15,10 @@ int main()
     // ========================================
     // PARAMÈTRES DE LA SIMULATION
     // ========================================
-    int N = 5000;              // Nombre de cellules dans le domaine
+    int N = 2000;              // Nombre de cellules dans le domaine
     double L = 40.0;           // Longueur du domaine (en mètres)
     double CFL = 0.45;        // Nombre CFL (doit être < 0.5)
-    double t_final = 5;     // Temps final de simulation (secondes)
+    double t_final = 3;     // Temps final de simulation (secondes)
     string fichier = "solution.txt";  // Fichier de sortie
     double critere_precision = N/(L*t_final);
     
@@ -49,9 +49,10 @@ int main()
     // solveur.DefinirFondPlat();
     
     // OU Cas B : Plage
-    solveur.DefinirFondPente(0.25*L, 0.5); // Pente commence à 25m, monte à 2m
+    // solveur.DefinirFondPente(0.25*L, 0.5); // Pente commence à 25m, monte à 2m
 
-    
+    // CAS C : 
+    solveur.DefinirFondMarche(3,0.5);
     // ========================================
     // Condition initale : EAU
     // ========================================
@@ -59,14 +60,14 @@ int main()
     // Condition initiale houle
     // Amplitude 0.3m sur 1m de fond = belle vague bien visible
 
-    // double amplitude_vague(0.2);
+    // double amplitude_vague(0.0);
     // solveur.ConditionInitialeHoule(amplitude_vague);
 
     // Condition initiale barrage
     // solveur.ConditionInitialeDamBreak();
 
     // Condition initiale gaussienne
-    double amplitude_vague(0.2);
+    double amplitude_vague(0.0);
     solveur.ConditionInitialeGaussienne(amplitude_vague);
 
 
