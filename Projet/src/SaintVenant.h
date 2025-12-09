@@ -56,7 +56,16 @@ public:
     void ConditionInitialeHoule(double amplitude);
 
     void ConditionInitialeDamBreak();
-    
+
+    void ConditionInitialeGaussienne(double amplitude);
+
+    // Configuration de la géométrie (Bathymétrie)
+    void DefinirFondPlat();
+    void DefinirFondPente(double x_debut, double z_fin);
+    void DefinirFondMarche(double x_marche, double z_haut);
+
+
+
     // Calculer le flux physique F(h, hu) = (hu, hu²/h + g*h²/2)
     void CalculerFluxPhysique(double h, double hu, double& F_h, double& F_hu);
     
@@ -91,6 +100,17 @@ public:
     double ObtenirDt() const { return _dt; }
     double ObtenirHFond() const { return _h_fond; }
     const std::vector<double>& ObtenirZb() const { return _zb; }
+
+    // Accesseurs pour debug
+double ObtenirH(int i) const { 
+    if (i >= 0 && i < _N) return _h[i]; 
+    return 0.0; 
+}
+double ObtenirZb(int i) const { 
+    if (i >= 0 && i < _N) return _zb[i]; 
+    return 0.0; 
+}
+int ObtenirN() const { return _N; }
 };
 
 #endif // _SAINT_VENANT_H

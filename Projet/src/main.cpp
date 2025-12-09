@@ -15,17 +15,19 @@ int main()
     // ========================================
     // PARAMÈTRES DE LA SIMULATION
     // ========================================
-    int N = 6000;              // Nombre de cellules dans le domaine
-    double L = 90.0;           // Longueur du domaine (en mètres)
+    int N = 5000;              // Nombre de cellules dans le domaine
+    double L = 40.0;           // Longueur du domaine (en mètres)
     double CFL = 0.45;        // Nombre CFL (doit être < 0.5)
-    double t_final = 15;     // Temps final de simulation (secondes)
+    double t_final = 5;     // Temps final de simulation (secondes)
     string fichier = "solution.txt";  // Fichier de sortie
+    double critere_precision = N/(L*t_final);
     
     cout << "Paramètres :" << endl;
     cout << "  Nombre de cellules : " << N << endl;
     cout << "  Longueur domaine : " << L << " m" << endl;
     cout << "  Temps final : " << t_final << " s" << endl;
     cout << "  CFL : " << CFL << endl;
+    cout << "  Critère de précision : " << critere_precision << endl;
     cout << endl;
     
     // ========================================
@@ -36,19 +38,41 @@ int main()
     // Initialiser avec les paramètres
     solveur.Initialiser(N, L, CFL, fichier);
     cout << endl;
-    
-// ========================================
-    // CONDITION INITIALE : Houle
-    // ========================================
-    // Amplitude 0.3m sur 1m de fond = belle vague bien visible
-    double amplitude_vague(0.2);
-    solveur.ConditionInitialeHoule(amplitude_vague);
 
+
+
+    // ========================================
+    // Condition initale : BATHYMÉTRIE
+    // ========================================
+
+    // Cas A : Fond plat simple
+    // solveur.DefinirFondPlat();
+    
+    // OU Cas B : Plage
+    solveur.DefinirFondPente(0.25*L, 0.5); // Pente commence à 25m, monte à 2m
+
+    
+    // ========================================
+    // Condition initale : EAU
+    // ========================================
+
+    // Condition initiale houle
+    // Amplitude 0.3m sur 1m de fond = belle vague bien visible
+
+    // double amplitude_vague(0.2);
+    // solveur.ConditionInitialeHoule(amplitude_vague);
+
+    // Condition initiale barrage
     // solveur.ConditionInitialeDamBreak();
 
+    // Condition initiale gaussienne
+    double amplitude_vague(0.2);
+    solveur.ConditionInitialeGaussienne(amplitude_vague);
 
 
-
+    // ========================================
+    // Test et affichage des données initiales
+    // ========================================
 
     // On stocke la position de départ de la vague
     double x_depart = solveur.ObtenirPositionCrete();
@@ -103,26 +127,13 @@ int main()
         iteration++;
         
         // Afficher l'avancement tous les 50 pas
-        if (iteration % 50 == 0)
+        if (iteration % 500 == 0)
         {
-
-        // ========================================
-        //Validation de la masse
-        // ========================================
-        // 1. Calculer la masse actuelle et l'erreur
-        double masse_actuelle = solveur.CalculerMasseTotale();
-        double erreur_masse = masse_actuelle - masse_initiale;
         
         cout << "Itération " << iteration 
                 << " : t = " << t 
                 << " s, dt = " << solveur.ObtenirDt() << " s" << endl;
                 
-        // 2. Affichage scientifique pour la petite erreur
-        cout << "  -> Erreur de masse (M_actu - M_init) : " 
-                << scientific << erreur_masse 
-                << " (doit etre tres proche de 0)" << endl;
-        cout.unsetf(ios::scientific); // Revenir à l'affichage normal
-    
         // ========================================
         //Validation de la vitesse
         // ========================================
@@ -147,10 +158,12 @@ int main()
         cout << "  -> Hauteur Max    : " << h_max_actuel << " m" << endl;
 
         // ========================================
-        //Validation de l'energie 
+        //Validation de l'energie et masse
         // ========================================
 
         // 1. Calculs
+        double masse_actuelle = solveur.CalculerMasseTotale();
+        double erreur_masse = masse_actuelle - masse_initiale;
         double energie_actuelle = solveur.CalculerEnergieTotale();
         double erreur_energie = energie_actuelle - energie_initiale; // L'énergie diminue un peu, c'est normal (dissipation)
 

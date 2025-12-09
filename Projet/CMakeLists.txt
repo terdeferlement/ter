@@ -1,14 +1,14 @@
 ##################
 # Début de l'en-tête.
 # Normalement, vous n'aurez jamais rien à modifier dans cette partie.
-cmake_minimum_required( VERSION 3.0 )
+cmake_minimum_required( VERSION 3.10 )
 
 project( PG201_TP1 VERSION 2023 )
 
 set( CXX_STANDARD_REQUIRED On )
 set( CXX_STANDARD C++11 )
 
-set( LIBRARY_PATH_EIGEN "/net/netud/m/elatouche001/TPCPP/TP3/test_Eigen/eigen/" )
+set( LIBRARY_PATH_EIGEN "/Users/ethanlatouche/Downloads/DM1/test_Eigen/eigen-3.4.0/" )
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/" )
 

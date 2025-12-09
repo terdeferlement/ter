@@ -68,7 +68,7 @@ void SaintVenant1D::ConditionInitialeHoule(double amplitude)
     _h_fond = niveau_eau_moyen;     // Pour le calcul théorique
     
     // Paramètres de la vague (Soliton)
-    double x_vague = 0.25*_L; // Départ de la vague (zone plate)
+    double x_vague = 0.5*_L; // Départ de la vague (zone plate)
     double k = sqrt((3.0 * amplitude) / (4.0 * pow(niveau_eau_moyen, 3)));
     double c = sqrt(_g * (niveau_eau_moyen + amplitude));
 
@@ -116,6 +116,87 @@ void SaintVenant1D::ConditionInitialeHoule(double amplitude)
     }
     cout << "Plage initialisée : Pente de " << x_debut_pente << "m a " << _L << "m." << endl;
 }
+
+
+
+void SaintVenant1D::ConditionInitialeGaussienne(double amplitude)
+{
+    double niveau_surface_libre = 1.0; // Altitude de la surface libre (Z absolu)
+    _h_fond = niveau_surface_libre; // Pour référence
+    
+    double x_centre = 0.25*_L;
+    double largeur = 0.5;
+
+    for (int i = 0; i < _N; i++)
+    {
+        double x = (i + 0.5) * _dx;
+        
+        // 1. Surface libre de base (horizontale)
+        double surface_base = niveau_surface_libre;
+        
+        // 2. Ajouter la perturbation gaussienne sur la SURFACE
+        double distance = x - x_centre;
+        double perturbation = amplitude * exp(-(distance*distance)/(2.0*largeur*largeur));
+        double surface_totale = surface_base + perturbation;
+        
+        // 3. Calculer h = Surface - Fond
+        _h[i] = surface_totale - _zb[i];
+        
+        // Gestion zone sèche
+        if (_h[i] < 0) _h[i] = 0.0;
+        
+        // 4. Vitesse initiale nulle
+        _hu[i] = 0.0;
+    }
+    cout << "Fluide : Gaussienne (Amp=" << amplitude 
+         << ", Surface=" << niveau_surface_libre << "m) sur bathymétrie." << endl;
+}
+// Condition initiale de bathymetrie
+
+void SaintVenant1D::DefinirFondPlat()
+{
+    // Remplir tout avec 0
+    for (int i = 0; i < _N; i++)
+    {
+        _zb[i] = 0.0;
+    }
+    _h_fond = 1.0; // Valeur par défaut pour référence
+    cout << "Bathymetrie : Fond plat (z=0)." << endl;
+}
+
+void SaintVenant1D::DefinirFondPente(double x_debut, double z_fin)
+{
+    // Pente linéaire à partir de x_debut
+    double pente = z_fin / (_L - x_debut);
+    
+    for (int i = 0; i < _N; i++)
+    {
+        double x = (i + 0.5) * _dx;
+        
+        if (x < x_debut) _zb[i] = 0.0;
+        else             _zb[i] = pente * (x - x_debut);
+    }
+    cout << "Bathymetrie : Pente démarrant a x=" << x_debut << "m." << endl;
+}
+
+void SaintVenant1D::DefinirFondMarche(double x_marche, double z_haut)
+{
+    for (int i = 0; i < _N; i++)
+    {
+        double x = (i + 0.5) * _dx;
+        
+        if (x < x_marche)
+        {
+            _zb[i] = 0.0;     // Partie basse (avant la marche)
+        }
+        else
+        {
+            _zb[i] = z_haut;  // Partie haute (sur la marche)
+        }
+    }
+    cout << "Bathymetrie : Marche d'escalier a x=" << x_marche << "m (Hauteur=" << z_haut << "m)." << endl;
+}
+
 
 // ========================================
 // Calculer le flux physique F(W)
@@ -249,16 +330,24 @@ void SaintVenant1D::Avancer()
         hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu - flux_gauche_hu);
 
         
-        // Pente locale dz/dx (différence centrée)
-        double dz_dx = (_zb[i+1] - _zb[i-1]) / (2.0 * _dx);
 
-        // Terme source : S = -g * h * (dz/dx)
-    // On ne l'applique que s'il y a de l'eau
-    if (_h[i] > critere_hauteur_deau)
-    {
-        double Source = - _g * _h[i] * dz_dx;
-        hu_nouveau[i] += _dt * Source; // On ajoute dt * Source
-    }
+  // ===== TERME SOURCE WELL-BALANCED =====
+        // Pour préserver l'équilibre hydrostatique (lac au repos)
+        // On doit calculer le gradient de la SURFACE LIBRE et non du fond
+        if (_h[i] > critere_hauteur_deau)
+        {
+            // Surface libre aux interfaces
+            double surface_gauche = _h[i-1] + _zb[i-1];
+            double surface_droite = _h[i+1] + _zb[i+1];
+            
+            // Gradient de surface (pente de l'eau)
+            double grad_surface = (surface_droite - surface_gauche) / (2.0 * _dx);
+            
+            // Terme source : force seulement si la surface n'est PAS horizontale
+            double Source = - _g * _h[i] * grad_surface;
+            hu_nouveau[i] += _dt * Source;
+        }
+
     }
     
     //Conditions limite fenetre ouverte

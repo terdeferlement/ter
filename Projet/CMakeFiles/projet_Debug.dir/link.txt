@@ -1,1 +1,1 @@
-/usr/bin/c++ -Wall -g -rdynamic CMakeFiles/projet_Debug.dir/src/main.cpp.o CMakeFiles/projet_Debug.dir/src/SaintVenant.cpp.o -o build/projet_Debug 
+/usr/bin/c++ -Wall -g -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/projet_Debug.dir/src/main.cpp.o CMakeFiles/projet_Debug.dir/src/SaintVenant.cpp.o -o build/projet_Debug
