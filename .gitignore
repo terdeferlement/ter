@@ -1,0 +1,30 @@
+# Fichiers générés par CMake (à ignorer par Git)
+# C'est la configuration Out-of-Source standard :
+
+/build/
+/install/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# Fichiers binaires et objets
+*.o
+*.a
+*.so
+*.dll
+*.exe
+projet_Debug*
+projet_Release*
+
+# Fichiers de projet et d'environnement IDE (Visual Studio Code, CLion, etc.)
+.vscode/
+.idea/
+*.swp
+*~
+
+# Fichiers de données et de résultats
+# NE JAMAIS COMMITER VOS RÉSULTATS DE SIMULATION !
+solution.txt
+*.log
+/images/
