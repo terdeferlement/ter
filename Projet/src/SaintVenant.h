@@ -53,30 +53,24 @@ public:
     // Initialiser la simulation
     void Initialiser(int N, double L, double CFL, std::string nom_fichier);
     
-    // Définir la condition initiale
-    // Dans la section public
+    // Définir la condition initiale de vague
     void ConditionInitialeSoliton(double A, double x_depart);
     void ConditionInitialeDamBreak();
-
     void ConditionInitialeGaussienne(double amplitude, double position_x, double largeur, double vitesse_init);
+
     // Configuration de la géométrie (Bathymétrie)
     void DefinirFondPlat();
     void DefinirFondPente(double x_debut, double z_fin);
     void DefinirFondMarche(double x_marche, double z_haut);
     void DefinirFondPentePuisPlat(double x_debut, double x_fin, double z_fin);
     void DefinirFondDoublePente(double x_debut, double x_cassure, double z_cassure, double z_fin);
-
-
-
     // Calculer le flux physique F(h, hu) = (hu, hu²/h + g*h²/2)
     void CalculerFluxPhysique(double h, double hu, double& F_h, double& F_hu);
     
     // Calculer le flux numérique de Lax-Friedrichs entre deux cellules
-    void FluxRusanov(double hL, double huL, double hR, double huR,
-                           double& flux_h, double& flux_hu);
+    void FluxRusanov(double hL, double huL, double hR, double huR, double& flux_h, double& flux_hu);
 
-    void FluxHLL(double hL, double huL, double hR, double huR,
-                            double& flux_h, double& flux_hu);
+    void FluxHLL(double hL, double huL, double hR, double huR, double& flux_h, double& flux_hu);
     
     // Calculer la vitesse u = hu/h
     double CalculerVitesse(double h, double hu);
@@ -107,18 +101,6 @@ public:
     double ObtenirHFond() const { return _h_fond; }
     const std::vector<double>& ObtenirZb() const { return _zb; }
     const std::vector<double>& ObtenirdZb() const { return _d_zb; }
-
-
-    // Accesseurs pour debug
-double ObtenirH(int i) const { 
-    if (i >= 0 && i < _N) return _h[i]; 
-    return 0.0; 
-}
-double ObtenirZb(int i) const { 
-    if (i >= 0 && i < _N) return _zb[i]; 
-    return 0.0; 
-}
-int ObtenirN() const { return _N; }
 };
 
 #endif // _SAINT_VENANT_H

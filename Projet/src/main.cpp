@@ -105,8 +105,6 @@ int main()
     double energie_initiale = solveur.CalculerEnergieTotale();
     cout << "Energie initiale : " << energie_initiale << " J" << endl;
     cout << endl;
-    // ------------------------------------------------
-
 
 
 
@@ -142,7 +140,7 @@ int main()
                 << " s, dt = " << solveur.ObtenirDt() << " s" << endl;
                 
         // ========================================
-        //Validation de la vitesse
+        //Validation de la vitesse et amplitude vague
         // ========================================
 
         // 1. Où est la vague maintenant ?
@@ -202,23 +200,6 @@ int main()
     cout << "  Résultats dans : " << fichier << endl;
     cout << "========================================" << endl;
     cout << endl;
-    
-    // ========================================
-    // INSTRUCTIONS POUR VISUALISER
-    // ========================================
-    cout << "Pour visualiser les résultats :" << endl;
-    cout << endl;
-    cout << "Avec Python :" << endl;
-    cout << "  python3 visualize.py" << endl;
-    cout << endl;
-    cout << "Avec gnuplot :" << endl;
-    cout << "  gnuplot" << endl;
-    cout << "  gnuplot> plot 'solution.txt' using 2:3 with lines" << endl;
-    cout << endl;
-
-
-
-    
     
     return 0;
 }

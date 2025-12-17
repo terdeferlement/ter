@@ -4,29 +4,18 @@
 
 using namespace std;
 
-// ========================================
-// Constructeur : initialise juste le temps à 0
-// ========================================
 SaintVenant1D::SaintVenant1D() : _t(0.0)
 {
 }
 
-// ========================================
-// Destructeur : ferme le fichier s'il est ouvert
-// ========================================
+
 SaintVenant1D::~SaintVenant1D()
 {
     if (_fichier.is_open())
         _fichier.close();
 }
 
-// ========================================
-// Initialiser la simulation
-// N = nombre de cellules
-// L = longueur du domaine
-// CFL = nombre CFL (0.45 conseillé)
-// nom_fichier = où sauvegarder les résultats
-// ========================================
+
 void SaintVenant1D::Initialiser(int N, double L, double CFL, string nom_fichier)
 {
     _N = N;
@@ -50,6 +39,16 @@ void SaintVenant1D::Initialiser(int N, double L, double CFL, string nom_fichier)
     cout << "  - Pas d'espace dx : " << _dx << " m" << endl;
 }
 
+
+
+
+    // ========================================
+    // Condition initiale vague
+    // ========================================
+
+
+
+
 void SaintVenant1D::ConditionInitialeDamBreak() {
     for (int i = 0; i < _N; i++) {
         if (i < _N / 2) _h[i] = 10.0; // Gauche haute
@@ -58,14 +57,10 @@ void SaintVenant1D::ConditionInitialeDamBreak() {
     }
 }
 
-// ========================================
-// Condition initiale : Soliton 
-// Une vague unique qui se déplace vers la droite
-// ========================================
 
 void SaintVenant1D::ConditionInitialeSoliton(double A, double x_depart)
 {
-    double h0 = 2; // Profondeur au repos (doit correspondre à ton fond plat)
+    double h0 = 2; // Profondeur au repos 
     _h_fond = h0;
     
     // 1. Célérité EXACTE du soliton (Vitesse de l'onde)
@@ -114,6 +109,7 @@ void SaintVenant1D::ConditionInitialeSoliton(double A, double x_depart)
     }
 }
 
+
 void SaintVenant1D::ConditionInitialeGaussienne(double amplitude, double position_x, double largeur, double vitesse_init)
 {
     double niveau_moyen = 0.2; 
@@ -146,7 +142,6 @@ void SaintVenant1D::ConditionInitialeGaussienne(double amplitude, double positio
         {
             _h[i] = h_calc;
             
-            // CORRECTION ICI : 
             // La vitesse est multipliée par le facteur de forme.
             // Si on est loin de la vague (facteur_forme ~ 0), la vitesse est nulle.
             // Si on est au sommet (facteur_forme = 1), la vitesse est 'vitesse_init'.
@@ -160,7 +155,16 @@ void SaintVenant1D::ConditionInitialeGaussienne(double amplitude, double positio
         }
     }
 }
-// Condition initiale de bathymetrie
+
+
+
+
+    // ========================================
+    // Condition initiale bathymetrie
+    // ========================================
+
+
+
 
 void SaintVenant1D::DefinirFondPlat()
 {
@@ -172,6 +176,7 @@ void SaintVenant1D::DefinirFondPlat()
     _h_fond = 1.0; // Valeur par défaut pour référence
     cout << "Bathymetrie : Fond plat (z=0)." << endl;
 }
+
 
 void SaintVenant1D::DefinirFondPente(double x_debut, double z_fin)
 {
@@ -196,6 +201,7 @@ void SaintVenant1D::DefinirFondPente(double x_debut, double z_fin)
     cout << "Bathymetrie : Pente démarrant a x=" << x_debut << "m." << endl;
 }
 
+
 void SaintVenant1D::DefinirFondMarche(double x_marche, double z_haut)
 {
     for (int i = 0; i < _N; i++)
@@ -217,7 +223,6 @@ void SaintVenant1D::DefinirFondMarche(double x_marche, double z_haut)
 
 void SaintVenant1D::DefinirFondPentePuisPlat(double x_debut, double x_fin, double z_fin)
 {
-    // Sécurité anti-crash
     if (x_fin <= x_debut) {
         cout << "Erreur : x_fin doit etre plus grand que x_debut !" << endl;
         return;
@@ -252,8 +257,6 @@ void SaintVenant1D::DefinirFondPentePuisPlat(double x_debut, double x_fin, doubl
         }
     }
 }
-
-
 
 
 void SaintVenant1D::DefinirFondDoublePente(double x_debut, double x_cassure, double z_cassure, double z_fin)
@@ -302,6 +305,11 @@ void SaintVenant1D::DefinirFondDoublePente(double x_debut, double x_cassure, dou
 
 
 
+// ========================================
+// Schéma
+// ========================================
+
+
 
 
 // ========================================
@@ -325,6 +333,7 @@ void SaintVenant1D::CalculerFluxPhysique(double h, double hu, double& F_h, doubl
     }
 }
 
+
 // ========================================
 // Calculer la vitesse u = hu/h
 // ========================================
@@ -337,9 +346,10 @@ double SaintVenant1D::CalculerVitesse(double h, double hu)
 }
 
 
-// Remplace FluxRusanov par ceci  FluxHLL
-void SaintVenant1D::FluxHLL(double hL, double huL, double hR, double huR,
-                            double& flux_h, double& flux_hu)
+// ========================================
+// Flux HLL
+// ========================================
+void SaintVenant1D::FluxHLL(double hL, double huL, double hR, double huR, double& flux_h, double& flux_hu)
 {
     // 1. Calcul des vitesses et célérités
     double uL = (hL > 1e-8) ? huL / hL : 0.0;
@@ -383,12 +393,9 @@ void SaintVenant1D::FluxHLL(double hL, double huL, double hR, double huR,
 
 
 // ========================================
-// C'est la moyenne des flux + un terme de dissipation
+// Flux Rusanov
 // ========================================
-
-
-void SaintVenant1D::FluxRusanov(double hL, double huL, double hR, double huR,
-                                       double& flux_h, double& flux_hu)
+void SaintVenant1D::FluxRusanov(double hL, double huL, double hR, double huR, double& flux_h, double& flux_hu)
 {
     // 1. Calculer les flux physiques à gauche et à droite
     double FL_h, FL_hu;   // Flux gauche
@@ -414,6 +421,7 @@ void SaintVenant1D::FluxRusanov(double hL, double huL, double hR, double huR,
     flux_hu = 0.5 * (FL_hu + FR_hu) - 0.5 * lambda * (huR - huL);
 }
 
+
 // ========================================
 // Calculer la vitesse maximale dans le domaine
 // Sert pour la condition CFL
@@ -436,6 +444,7 @@ double SaintVenant1D::VitesseMaximale()
     return v_max;
 }
 
+
 // ========================================
 // Calculer le pas de temps avec CFL
 // dt = CFL * dx / vitesse_max
@@ -450,62 +459,48 @@ void SaintVenant1D::CalculerPasDeTemps()
         _dt = 0.01;  // Valeur par défaut si v_max = 0
 }
 
+
 // ========================================
 // Avancer d'un pas de temps
-// Schéma de Godunov avec flux de rosunov
+// Schéma de Godunov avec flux de rosunov ou HLL
 // =======================================
-
-
 void SaintVenant1D::Avancer()
 {
-    //  Calculer le nouveau pas de temps
     CalculerPasDeTemps();
-    
-    //  Créer des vecteurs temporaires pour la nouvelle solution
+
     vector<double> h_nouveau(_N);
     vector<double> hu_nouveau(_N);
     double coeff = _dt / _dx;
-    
-    //  Pour chaque cellule (sauf les bords)
+   
     for (int i = 1; i < _N - 1; i++)
     {
-        // ==========================================================
-        //  NOUVELLE LOGIQUE : RECONSTRUCTION HYDROSTATIQUE (WELL-BALANCED)
-        // ==========================================================
-        
+
         // 1. Interface GAUCHE (entre i-1 et i)
         // ------------------------------------
         // On prend le "plus haut" fond à l'interface
         double z_inter_G = max(_zb[i-1], _zb[i]);
         
-        // On reconstruit les hauteurs d'eau pour qu'elles "voient" la marche
         double h_G_L = max(0.0, _h[i-1] + _zb[i-1] - z_inter_G); // Gauche de l'interface
         double h_G_R = max(0.0, _h[i]   + _zb[i]   - z_inter_G); // Droite de l'interface
         
         // Calcul du flux GAUCHE avec les hauteurs reconstruites
         double flux_gauche_h, flux_gauche_hu;
-        FluxHLL(h_G_L, _hu[i-1], h_G_R, _hu[i], 
-                    flux_gauche_h, flux_gauche_hu);
+        FluxHLL(h_G_L, _hu[i-1], h_G_R, _hu[i], flux_gauche_h, flux_gauche_hu);
 
         // 2. Interface DROITE (entre i et i+1)
         // ------------------------------------
         double z_inter_D = max(_zb[i], _zb[i+1]);
-        
+
         double h_D_L = max(0.0, _h[i]   + _zb[i]   - z_inter_D); // Gauche de l'interface
         double h_D_R = max(0.0, _h[i+1] + _zb[i+1] - z_inter_D); // Droite de l'interface
         
         // Calcul du flux DROITE avec les hauteurs reconstruites
         double flux_droite_h, flux_droite_hu;
-        FluxHLL(h_D_L, _hu[i], h_D_R, _hu[i+1], 
-                    flux_droite_h, flux_droite_hu);
+        FluxHLL(h_D_L, _hu[i], h_D_R, _hu[i+1], flux_droite_h, flux_droite_hu);
 
 
         // 3. Calcul du TERME SOURCE (Equilibre Hydrostatique)
-        // ------------------------------------
-        // Ce terme remplace votre ancien calcul "dzb_dx".
-        // Il est calculé précisément pour annuler l'erreur du flux quand l'eau est au repos.
-        // Formule : g/2 * (h_reconstruit^2 - h_reel^2)
-        
+        // ------------------------------------        
         double TermeSource_G = 0.5 * _g * (pow(h_G_R, 2) - pow(_h[i], 2));
         double TermeSource_D = 0.5 * _g * (pow(h_D_L, 2) - pow(_h[i], 2));
         
@@ -515,73 +510,33 @@ void SaintVenant1D::Avancer()
 
         // 4. MISE A JOUR
         // ------------------------------------
-        
-        // Conservation de la masse (inchangé, sauf que les flux utilisent h reconstruit)
         h_nouveau[i] = _h[i] - coeff * (flux_droite_h - flux_gauche_h);
-        
-        // Conservation de la quantité de mouvement
-        // On ajoute le terme source ici. Attention aux parenthèses.
-        // Note: Le terme source ici est déjà "intégré", on le multiplie par coeff (dt/dx) 
-        // car il agit comme une correction de flux aux interfaces.
-        hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu - flux_gauche_hu) 
-                               + coeff * Source_WellBalanced;
-
-        // ==========================================================
-        //  ANCIEN CODE (COMMENTÉ POUR MÉMOIRE)
-        // ==========================================================
-        /*
-        // Flux à l'interface droite (entre i et i+1)
-        double flux_droite_h_OLD, flux_droite_hu_OLD;
-        FluxRusanov(_h[i], _hu[i], _h[i+1], _hu[i+1],
-                         flux_droite_h_OLD, flux_droite_hu_OLD);
-        
-        // Flux à l'interface gauche (entre i-1 et i)
-        double flux_gauche_h_OLD, flux_gauche_hu_OLD;
-        FluxRusanov(_h[i-1], _hu[i-1], _h[i], _hu[i],
-                         flux_gauche_h_OLD, flux_gauche_hu_OLD);
-        
-        // Mise à jour conservative :
-        // W_nouveau = W_ancien - (dt/dx) * (Flux_droite - Flux_gauche)
-        h_nouveau[i] = _h[i] - coeff * (flux_droite_h_OLD - flux_gauche_h_OLD);
-        hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu_OLD - flux_gauche_hu_OLD);
-
-        // Pente locale dz/dx (différence centrée)
-        if (_h[i] > critere_hauteur_deau)
-        {
-            double dzb_dx = (_zb[i+1] - _zb[i-1]) / (2.0 * _dx);
-            double Source = - _g * _h[i] * dzb_dx;
-            hu_nouveau[i] += _dt * Source; // On ajoute dt * Source
-        }
-        */
+        hu_nouveau[i] = _hu[i] - coeff * (flux_droite_hu - flux_gauche_hu) + coeff * Source_WellBalanced;
     }
     
     //Conditions limite fenetre ouverte
     // Bord Gauche
     h_nouveau[0] = h_nouveau[1];
     hu_nouveau[0] = hu_nouveau[1];
-    // Bord Droit
+    // Bord Droit (pente)
     double H_voisin = h_nouveau[_N-2] + _zb[_N-2];
     h_nouveau[_N-1] = max(0.0, H_voisin - _zb[_N-1]);
-    // h_nouveau[_N-1] = h_nouveau[_N-2];
     hu_nouveau[_N-1] = hu_nouveau[_N-2];
-
     
     for (int i = 0; i < _N; i++) 
     {
         if (h_nouveau[i] < critere_hauteur_deau) 
         {
             h_nouveau[i] = 0.0;  // Hauteur nulle
-            hu_nouveau[i] = 0.0; // Vitesse nulle (tue les vitesses fantômes)
+            hu_nouveau[i] = 0.0; // Vitesse nulle 
         }
     }
-    
 
     // //  Conditions aux limites : réflexion
     // h_nouveau[0] = h_nouveau[1];
     // hu_nouveau[0] = -hu_nouveau[1];
     // h_nouveau[_N-1] = h_nouveau[_N-2];
     // hu_nouveau[_N-1] = -hu_nouveau[_N-2];
-
     
     //  Copier la nouvelle solution
     _h = h_nouveau;
@@ -590,6 +545,7 @@ void SaintVenant1D::Avancer()
     //  Avancer le temps
     _t += _dt;
 }
+
 
 // ========================================
 // Sauvegarder la solution dans le fichier
@@ -615,23 +571,13 @@ void SaintVenant1D::Sauvegarder()
 
 
 
+// ============================
+// Validation et information
+// ============================
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-// Validation
 
 
 double SaintVenant1D::CalculerMasseTotale()
@@ -670,6 +616,7 @@ double SaintVenant1D::ObtenirSurfaceMax()
     return H_max;
 }
 
+
 double SaintVenant1D::ObtenirPositionCrete()
 {
     double H_max = -99999.0;
@@ -690,6 +637,7 @@ double SaintVenant1D::ObtenirPositionCrete()
     
     return (i_max + 0.5) * _dx;
 }
+
 
 double SaintVenant1D::CalculerEnergieTotale()
 {
