@@ -15,7 +15,7 @@ private:
     int _N;              // Nombre de cellules
     double _L;           // Longueur du domaine [0, L]
     double _dx;          // Pas d'espace : dx = L/N
-    double critere_hauteur_deau=1e-10;
+    double critere_hauteur_deau=1e-4;
     double critere_vitesse=1e-10;
     
     // Paramètres temporels
@@ -55,16 +55,16 @@ public:
     
     // Définir la condition initiale
     // Dans la section public
-    void ConditionInitialeHoule(double amplitude);
-
+    void ConditionInitialeSoliton(double A, double x_depart);
     void ConditionInitialeDamBreak();
 
-    void ConditionInitialeGaussienne(double amplitude);
-
+    void ConditionInitialeGaussienne(double amplitude, double position_x, double largeur, double vitesse_init);
     // Configuration de la géométrie (Bathymétrie)
     void DefinirFondPlat();
     void DefinirFondPente(double x_debut, double z_fin);
     void DefinirFondMarche(double x_marche, double z_haut);
+    void DefinirFondPentePuisPlat(double x_debut, double x_fin, double z_fin);
+    void DefinirFondDoublePente(double x_debut, double x_cassure, double z_cassure, double z_fin);
 
 
 
@@ -74,6 +74,9 @@ public:
     // Calculer le flux numérique de Lax-Friedrichs entre deux cellules
     void FluxRusanov(double hL, double huL, double hR, double huR,
                            double& flux_h, double& flux_hu);
+
+    void FluxHLL(double hL, double huL, double hR, double huR,
+                            double& flux_h, double& flux_hu);
     
     // Calculer la vitesse u = hu/h
     double CalculerVitesse(double h, double hu);
@@ -94,7 +97,8 @@ public:
     double CalculerMasseTotale();
     // Pour valider la conservation de la vitesse
     double ObtenirPositionCrete(); // Retourne le X où h est maximal
-    double ObtenirHauteurMax();    // Retourne le h maximal actuel
+    double ObtenirHauteurMax();    // Retourne l'épaisseur d'eau max (h)
+    double ObtenirSurfaceMax();    // Retourne l'altitude max (h + zb) 
     // Pour valider l'energie
     double CalculerEnergieTotale();
     // Accesseurs

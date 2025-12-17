@@ -130,39 +130,39 @@ plt.savefig('images/etat_final_complet.png', dpi=200, bbox_inches='tight')
 print("✓ Sauvegardé : etat_final_complet.png")
 plt.show()
 
-# # ================================================
-# # GRAPHIQUE 3 : DIAGRAMME ESPACE-TEMPS 3D
-# # ================================================
-# print("\nCréation du diagramme espace-temps 3D...")
+# ================================================
+# GRAPHIQUE 3 : DIAGRAMME ESPACE-TEMPS 3D
+# ================================================
+print("\nCréation du diagramme espace-temps 3D...")
 
-# fig = plt.figure(figsize=(14, 9))
-# ax = fig.add_subplot(111, projection='3d')
+fig = plt.figure(figsize=(14, 9))
+ax = fig.add_subplot(111, projection='3d')
 
-# # Surface libre dans le temps
-# surf = ax.plot_trisurf(x, temps, H, cmap='viridis', alpha=0.8, 
-#                        linewidth=0, antialiased=True, edgecolor='none')
+# Surface libre dans le temps
+surf = ax.plot_trisurf(x, temps, H, cmap='viridis', alpha=0.8, 
+                       linewidth=0, antialiased=True, edgecolor='none')
 
-# # Ajouter le fond (bathymétrie) à tous les temps
-# for t in temps_uniques[::max(1, len(temps_uniques)//10)]:
-#     indices = np.where(temps == t)[0]
-#     ax.plot(x[indices], [t]*len(indices), zb[indices], 'k-', linewidth=1, alpha=0.3)
+# Ajouter le fond (bathymétrie) à tous les temps
+for t in temps_uniques[::max(1, len(temps_uniques)//10)]:
+    indices = np.where(temps == t)[0]
+    ax.plot(x[indices], [t]*len(indices), zb[indices], 'k-', linewidth=1, alpha=0.3)
 
-# ax.set_xlabel('Position x (m)', fontsize=12, labelpad=10)
-# ax.set_ylabel('Temps t (s)', fontsize=12, labelpad=10)
-# ax.set_zlabel('Altitude (m)', fontsize=12, labelpad=10)
-# ax.set_title('Diagramme espace-temps : Surface libre et bathymétrie', 
-#              fontsize=14, fontweight='bold', pad=20)
+ax.set_xlabel('Position x (m)', fontsize=12, labelpad=10)
+ax.set_ylabel('Temps t (s)', fontsize=12, labelpad=10)
+ax.set_zlabel('Altitude (m)', fontsize=12, labelpad=10)
+ax.set_title('Diagramme espace-temps : Surface libre et bathymétrie', 
+             fontsize=14, fontweight='bold', pad=20)
 
-# # Barre de couleur
-# cbar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-# cbar.set_label('Surface libre (m)', fontsize=11)
+# Barre de couleur
+cbar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+cbar.set_label('Surface libre (m)', fontsize=11)
 
-# # Angle de vue optimal
-# ax.view_init(elev=25, azim=45)
+# Angle de vue optimal
+ax.view_init(elev=25, azim=45)
 
-# plt.savefig('images/espace_temps_3D.png', dpi=200, bbox_inches='tight')
-# print("✓ Sauvegardé : espace_temps_3D.png")
-# plt.show()
+plt.savefig('images/espace_temps_3D.png', dpi=200, bbox_inches='tight')
+print("✓ Sauvegardé : espace_temps_3D.png")
+plt.show()
 
 # ================================================
 # GRAPHIQUE 4 : ÉVOLUTION DE LA HAUTEUR D'EAU
